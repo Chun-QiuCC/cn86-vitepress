@@ -39,7 +39,7 @@ protocol ospf v2 ospf1{  # ospf1 为实例名称
     
     # Area 0 (骨干区域)
     area 0.0.0.0 {
-        interface "wg*" {      # WireGuard接口名称
+        interface "wg*" {      # 为拓展使用wg*，后续扩展WG配置时，请遵循通配符使用 wg1 wg2 wg3 等
             type ptp;          # 点对点模式
             hello 10;          # Hello间隔10秒
             dead 40;           # Dead间隔40秒
