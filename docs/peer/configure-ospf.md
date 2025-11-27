@@ -14,7 +14,7 @@ BIRD2是一个功能非常强大的路由软件，这里只给出最简单能实
 # /etc/bird/bird.conf
 log syslog all;
 
-# 路由器ID，在整个网络上需要唯一标识，建议使用WireGuard隧道IP
+# 路由器ID，在整个网络上需要唯一标识，在CN86中规定使用自己的WireGuard隧道IP
 router id 10.86.1.1;
 
 # 设备协议，监控接口状态
@@ -30,18 +30,11 @@ protocol kernel {
     };
 }
 
-# 静态路由协议，宣告本地网络
-protocol static {
-    ipv4 {
-        route 10.86.1.0/24 via "wg0";  # 在wg0端口上宣告你的IP段
-    };
-}
-
 # OSPF协议配置
-protocol ospf v2 {
+protocol ospf v2 ospf1{  # ospf1 为实例名称
     ipv4 {
         export all;    # 导出所有路由到OSPF
-        import all;    # 从OSPF导入所有路由
+        import where net ~! 10.86.1.0/24;    # 从OSPF导入所有路由，除了你自己的IP段
     };
     
     # Area 0 (骨干区域)
@@ -66,5 +59,17 @@ protocol ospf v2 {
  ```birdc show protocols all```
  2. 确认 OSPF 邻居关系  
  ```birdc show ospf interface```
+如果在这段输出了
+```
+BIRD 2.0.7 ready.
+ospf1:
+Router ID       Pri          State      DTime   Interface  Router IP
+10.86.87.1        1     Full/PtP        30.056  wg0        10.86.87.1
+     ↑                                           ↑              ↑
+对方的Router ID                               你的接口名称    对方的IP
+```
+则说明邻居建立成功。
+
  3. 检查路由是否正确  
- ```birdc show route protocol ospf```
+ ```birdc show route protocol [实例名称]```
+ 其中 ```[实例名称]``` 是```birdc show ospf interface```输出中的 ```ospf1``` ，这一项在配置文件中可以自定义。
