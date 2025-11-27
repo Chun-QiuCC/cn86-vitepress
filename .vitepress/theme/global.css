@@ -1,0 +1,15 @@
+/* 缩放遮罩层：覆盖页面，背景使用 VitePress 原生背景色 */
+.medium-zoom-overlay {
+  background-color: var(--vp-c-bg) !important; /* !important 确保覆盖默认样式 */
+  z-index: 100; /* 层级高于导航栏（默认导航栏 z-index 较低） */
+}
+
+/* 放大后的图片：层级高于遮罩层，确保显示在最上层 */
+.medium-zoom-overlay ~ img {
+  z-index: 101;
+}
+
+/* 优化遮罩层透明度：避免完全遮挡背景，提升体验 */
+.medium-zoom--opened .medium-zoom-overlay {
+  opacity: 0.9 !important;
+}

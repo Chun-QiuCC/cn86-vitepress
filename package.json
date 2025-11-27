@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "dependencies": {
+    "vitepress": "^1.6.4"
+  },
+  "devDependencies": {
+    "medium-zoom": "^1.1.0"
+  }
+}
