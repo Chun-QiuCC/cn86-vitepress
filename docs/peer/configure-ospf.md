@@ -56,9 +56,9 @@ protocol ospf v2 ospf1{  # ospf1 为实例名称
 
 ## 检查是否配置成功
  1. 检查协议是否正常  
- ```birdc show protocols all```
- 2. 确认 OSPF 邻居关系  
  ```birdc show ospf interface```
+ 2. 确认 OSPF 邻居关系  
+ ```birdc show ospf neighbors```
 如果在这段输出了
 ```
 BIRD 2.0.7 ready.
