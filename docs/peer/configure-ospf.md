@@ -34,7 +34,7 @@ protocol kernel {
 protocol ospf v2 ospf1{  # ospf1 为实例名称
     ipv4 {
         export all;    # 导出所有路由到OSPF
-        import where net ~! 10.86.1.0/24;    # 从OSPF导入所有路由，除了你自己的IP段
+        import where net !~ [10.86.1.0/24+];    # 从OSPF导入所有路由，除了你自己的IP段
     };
     
     # Area 0 (骨干区域)
