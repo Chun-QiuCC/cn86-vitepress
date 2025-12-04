@@ -1,9 +1,10 @@
-// 导入 VitePress 默认主题、Vue 生命周期与路由工具、medium-zoom
+// .vitepress/theme/index.js
+
 import DefaultTheme from 'vitepress/theme'
 import { onMounted, watch, nextTick } from 'vue'
-import { useRoute } from 'vitepress'
+import { useRoute, useRouter } from 'vitepress'
+// 你可以按需导入 medium-zoom，但通常直接导入即可
 import mediumZoom from 'medium-zoom'
-// 后续会创建全局样式文件，先提前导入（若暂时没创建，可先注释，后续补回）
 import './global.css'
 import './rainbow.css'
 
@@ -11,56 +12,71 @@ import './rainbow.css'
 let homePageStyle
 
 export default {
-  // 继承默认主题的所有功能
   extends: DefaultTheme,
 
-  // enhanceApp 函数用于整合原本在 setup 中和 enhanceApp 中的逻辑
-  enhanceApp({ app, router }) {
-    // 定义图片缩放初始化函数
+  // enhanceApp 钩子在服务端和客户端初始化时都会被调用
+  // 主要用于安装插件、注册全局组件等
+  enhanceApp({ app }) {
+    // 这里一般不需要放 medium-zoom 的逻辑
+    // 它的初始化更适合放在 setup 中，以响应页面变化
+  },
+
+  // setup 钩子会在每个页面的组件实例创建时调用
+  // 它能访问到响应式 API 和生命周期钩子
+  setup() {
+    // 获取路由实例，用于监听页面变化
+    const router = useRouter()
+    const route = useRoute()
+
+    // 初始化图片缩放的核心逻辑，封装成一个函数方便复用
     const initZoom = () => {
+      // 【关键点】确保只在客户端执行
+      // 在构建时，这段代码不会运行，从而避免了 window is not defined 的错误
+      if (import.meta.env.SSR) return
+
+      // mediumZoom('.main img') 会为所有匹配的图片添加缩放功能
+      // VitePress 默认主题的内容区域类名是 .vp-doc，但有时插件会用 .main
+      // 使用 '.vp-doc img' 更具通用性。这里我们保留你的选择器 '.main img'
       mediumZoom('.main img', { background: 'var(--vp-c-bg)' })
     }
+    
+    // 1. 在组件挂载后（即页面首次加载完成时）初始化
+    onMounted(() => {
+      initZoom()
+      // 同时处理首页彩虹背景
+      updateHomePageStyle(location.pathname === '/')
+    })
 
-    // 监听路由变化（切换页面时）来初始化图片缩放
+    // 2. 监听路由变化，在切换到新页面后重新初始化
+    // 因为新页面的图片是新渲染的DOM，需要重新绑定事件
     watch(
-      () => router.route.data.relativePath,
+      () => route.path, // 监听完整路径更可靠
       () => {
-        // 使用 nextTick 确保 DOM 已更新，再初始化缩放
-        nextTick(initZoom)
+        // 使用 nextTick 确保 DOM 完全更新后再执行
+        nextTick(() => {
+          initZoom()
+          updateHomePageStyle(location.pathname === '/')
+        })
       }
     )
-
-    // 处理彩虹背景
-    if (typeof window !== 'undefined') {
-      watch(
-        () => router.route.data.relativePath,
-        () => updateHomePageStyle(location.pathname === '/'),
-        { immediate: true }
-      )
-    }
-  },
-  setup() {
-    onMounted(() => {
-      mediumZoom('.main img', { background: 'var(--vp-c-bg)' })
-    })
   }
 }
 
-function updateHomePageStyle(value) {
-  if (value) {
-    // 如果已经是首页，且样式已存在，则无需重复添加
-    if (homePageStyle) return
+// 这个函数本身也依赖 document，所以调用它的地方也确保是在客户端
+function updateHomePageStyle(isHomePage) {
+  // 【关键点】同样，确保只在客户端执行
+  if (import.meta.env.SSR) return
 
+  if (isHomePage) {
+    if (homePageStyle) return
     homePageStyle = document.createElement('style')
     homePageStyle.innerHTML = `
-    :root {
-      animation: rainbow 12s linear infinite;
-    }`
-    document.body.appendChild(homePageStyle)
+      :root {
+        animation: rainbow 12s linear infinite;
+      }`
+    document.head.appendChild(homePageStyle) // 建议将 style 添加到 head 中
   } else {
-    // 如果不是首页，且样式存在，则移除它
     if (!homePageStyle) return
-
     homePageStyle.remove()
     homePageStyle = undefined
   }
